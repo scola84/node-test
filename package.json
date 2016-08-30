@@ -1,0 +1,10 @@
+{
+  "name": "@scola/test",
+  "version": "0.0.0",
+  "description": "Test",
+  "repository": "github:scola84/node-test",
+  "author": "M.C. van den Boogaart <scola@kvdb.name>",
+  "license": "MIT",
+  "main": "./index.js",
+  "jsnext:main": "./index.js"
+}
