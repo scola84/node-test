@@ -8,7 +8,7 @@ import updateRoute from './route/update';
 
 export default function server(router, factory, database, pubsub) {
   if (pubsub) {
-    pubsub.on('open', () => {
+    pubsub.addListener('open', () => {
       factory.model('i').subscribe(true);
     });
   }

@@ -1,14 +1,29 @@
-import { panel, panelButton, panelMessage } from '@scola/d3-panel';
-import { menuItem, filterItem, listHeader } from '@scola/d3-list';
+import {
+  menuItem,
+  filterItem,
+  listHeader
+} from '@scola/d3-list';
+
+import {
+  listModel,
+  objectModel,
+  MODE_UNSUB
+} from '@scola/d3-model';
+
+import {
+  panel,
+  panelButton,
+  panelMessage
+} from '@scola/d3-panel';
+
 import { scroller } from '@scola/d3-scroller';
-import { listModel, objectModel } from '@scola/d3-model';
 
 export default function testListRoute(router, factory, i18n) {
   router.target('menu').route('scola.test.list', (route) => {
     let offset = Number(route.parameter('offset') || 0);
 
     const testModel = listModel('scola.test.list')
-      .subscribe(true);
+      .mode(MODE_UNSUB);
 
     const helperModel = objectModel('scola.test.helper');
 
@@ -31,7 +46,10 @@ export default function testListRoute(router, factory, i18n) {
 
     scroll
       .root()
-      .style('background', '#FFF');
+      .style('background', '#FFF')
+      .on('click', () => {
+        router.target('menu').element().hide();
+      });
 
     listPanel.append(scroll, true);
 
@@ -68,6 +86,12 @@ export default function testListRoute(router, factory, i18n) {
           .text('Items ' + begin + ' - ' + end);
       })
       .enter((datum, index) => {
+        if (helperModel.get('id') === null) {
+          helperModel
+            .set('id', datum.id)
+            .commit();
+        }
+
         const item = menuItem()
           .index(index)
           .name('id')
@@ -83,7 +107,9 @@ export default function testListRoute(router, factory, i18n) {
           .text(datum.text);
       })
       .scroll(() => {
-        helperModel.set('offset', scroll.offset());
+        helperModel
+          .set('offset', scroll.offset())
+          .commit();
       });
 
     function handleChangeInsert() {
@@ -111,7 +137,9 @@ export default function testListRoute(router, factory, i18n) {
 
           const id = nearest ? nearest.value() : null;
 
-          helperModel.set('id', id);
+          helperModel
+            .set('id', id)
+            .commit();
         }
 
         scroll
@@ -121,6 +149,10 @@ export default function testListRoute(router, factory, i18n) {
     }
 
     function handleChangeFilter(event) {
+      if (event.diff.length === 0) {
+        return;
+      }
+
       testModel
         .model(factory
           .model('i')
@@ -167,7 +199,7 @@ export default function testListRoute(router, factory, i18n) {
       }
     }
 
-    function handleChange(event) {
+    function handleChangeTest(event) {
       if (event.action === 'insert') {
         handleChangeInsert(event);
       }
@@ -190,8 +222,10 @@ export default function testListRoute(router, factory, i18n) {
 
     function handleRoute(parameters) {
       setTimeout(() => {
-        helperModel.set('filter', parameters.filter || '');
-        helperModel.set('offset', parameters.offset || 0);
+        helperModel
+          .set('filter', parameters.filter || '')
+          .set('offset', Number(parameters.offset) || 0)
+          .commit();
       });
     }
 
@@ -199,10 +233,10 @@ export default function testListRoute(router, factory, i18n) {
       route.removeListener('parameters', handleRoute);
       route.removeListener('destroy', handleDestroy);
 
-      testModel.removeListener('change', handleChange);
+      testModel.removeListener('change', handleChangeTest);
       testModel.destroy();
 
-      helperModel.removeListener('change', handleChangeHelper);
+      helperModel.removeListener('set', handleChangeHelper);
       helperModel.destroy();
 
       insertButton.root().on('click', null);
@@ -212,8 +246,8 @@ export default function testListRoute(router, factory, i18n) {
       route.on('parameters', handleRoute);
       route.on('destroy', handleDestroy);
 
-      testModel.on('change', handleChange);
-      helperModel.on('change', handleChangeHelper);
+      testModel.on('change', handleChangeTest);
+      helperModel.on('set', handleChangeHelper);
 
       insertButton.root().on('click', handleInsert);
     }

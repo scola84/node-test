@@ -1,5 +1,3 @@
-/* eslint no-shadow: 0 */
-
 import filterValidator from '../../common/validator/filter';
 import orderValidator from '../../common/validator/order';
 
@@ -8,14 +6,14 @@ export default function listModel(factory, i18n) {
     return i18n().string().format(field);
   }
 
-  function filter(filter, callback) {
-    callback(filterValidator.validate(filter, {
+  function filter(value, callback) {
+    callback(filterValidator.validate(value, {
       i18n
     }));
   }
 
-  function order(order, callback) {
-    callback(orderValidator.validate(order, {
+  function order(value, callback) {
+    callback(orderValidator.validate(value, {
       i18n
     }));
   }

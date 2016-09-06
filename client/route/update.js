@@ -12,7 +12,10 @@ import {
   listButton
 } from '@scola/d3-list';
 
-import { objectModel } from '@scola/d3-model';
+import {
+  objectModel,
+  MODE_SUB
+} from '@scola/d3-model';
 
 import {
   popUp,
@@ -24,7 +27,7 @@ export default function updateRoute(router, factory, i18n) {
     const string = i18n.string();
 
     const testModel = objectModel('scola.test.object')
-      .subscribe(true);
+      .mode(MODE_SUB);
 
     const helperModel = objectModel('scola.test.helper');
 
@@ -52,18 +55,21 @@ export default function updateRoute(router, factory, i18n) {
 
     const item1 = inputItem()
       .name('text')
+      .text(string.format('text'), '3em')
       .model(testModel);
 
     list.append(item1, true);
 
     const item2 = switchItem()
       .name('switch')
+      .text(string.format('switch'))
       .model(testModel);
 
     list.append(item2, true);
 
     const item3 = navItem()
       .name('duration')
+      .text(string.format('duration.name'))
       .model(testModel);
 
     list.append(item3, true);
@@ -102,16 +108,21 @@ export default function updateRoute(router, factory, i18n) {
     let pop = null;
 
     function lock(text) {
-      updatePanel.message(text);
       updateButton.disabled(true);
       deleteButton.disabled(true);
+      updatePanel.message(text);
       list.comment(false);
     }
 
     function unlock() {
-      updatePanel.message(false);
-      updateButton.disabled(false);
+      if (testModel.diff().length > 0) {
+        updateButton.disabled(false);
+      } else {
+        updateButton.disabled(true);
+      }
+
       deleteButton.disabled(false);
+      updatePanel.message(false);
       list.comment(false);
     }
 
@@ -164,8 +175,12 @@ export default function updateRoute(router, factory, i18n) {
         .append(ok, true);
     }
 
-    function handleChange() {
-      if (testModel.diff().length > 0) {
+    function handleCommitTest() {
+      updateButton.disabled(true);
+    }
+
+    function handleSetTest(event) {
+      if (event.diff.length > 0) {
         updateButton.disabled(false);
       } else {
         updateButton.disabled(true);
@@ -177,44 +192,51 @@ export default function updateRoute(router, factory, i18n) {
         }));
       });
 
-      item1.text(string.format('text'), '3em');
-      item2.text(string.format('switch'));
-      item3.text(string.format('duration.name'));
-
       item3.secondary().text(string.format('duration.value', {
         index: testModel.get('duration')
       }));
     }
 
-    function handleRoute(parameters) {
-      if (typeof parameters.id !== 'undefined') {
-        unlock();
-        helperModel.set('id', Number(parameters.id));
-      } else {
-        lock(string.format('not_selected'));
-      }
+    function handleChangeTest(event) {
+      testModel
+        .values(event.data)
+        .commit();
     }
 
     function handleChangeHelper(event) {
-      if (event.name === 'id') {
-        testModel
-          .model(factory
-            .model('i')
-            .object({
-              id: event.value
-            }))
-          .select((error) => {
-            if (error) {
-              lock(error.toString(string));
-              return;
-            }
+      if (event.name !== 'id' || !event.value) {
+        return;
+      }
 
-            unlock();
+      testModel
+        .model(factory
+          .model('i')
+          .object({
+            id: event.value
+          }))
+        .select((error) => {
+          if (error) {
+            lock(error.toString(string));
+            return;
+          }
 
-            route
-              .parameter('id', event.value)
-              .go('replace');
-          });
+          unlock();
+
+          route
+            .parameter('id', event.value)
+            .go('replace');
+        });
+    }
+
+    function handleRoute(parameters) {
+      if (typeof parameters.id !== 'undefined') {
+        unlock();
+        helperModel
+          .set('id', Number(parameters.id))
+          .commit();
+      } else {
+        helperModel.set('id', null);
+        lock(string.format('not_selected'));
       }
     }
 
@@ -222,7 +244,9 @@ export default function updateRoute(router, factory, i18n) {
       route.removeListener('parameters', handleRoute);
       route.removeListener('destroy', handleDestroy);
 
-      testModel.removeListener('change', handleChange);
+      testModel.removeListener('set', handleSetTest);
+      testModel.removeListener('commit', handleCommitTest);
+      testModel.removeListener('change', handleChangeTest);
       testModel.destroy();
 
       helperModel.removeListener('change', handleChangeHelper);
@@ -240,8 +264,11 @@ export default function updateRoute(router, factory, i18n) {
       route.on('parameters', handleRoute);
       route.on('destroy', handleDestroy);
 
-      testModel.on('change', handleChange);
-      helperModel.on('change', handleChangeHelper);
+      testModel.on('set', handleSetTest);
+      testModel.on('commit', handleCommitTest);
+      testModel.on('change', handleChangeTest);
+
+      helperModel.on('set', handleChangeHelper);
 
       updateButton.root().on('click', handleUpdate);
       deleteButton.root().on('click', handleDelete);
