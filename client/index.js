@@ -1,3 +1,5 @@
+import '@scola/d3-media';
+
 import data from '../common/i18n/data';
 
 import listModel from './model/list';
