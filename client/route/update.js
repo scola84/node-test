@@ -13,8 +13,8 @@ import {
 } from '@scola/d3-list';
 
 import {
-  objectModel,
-  MODE_SUB
+  MODE_SUB,
+  objectModel
 } from '@scola/d3-model';
 
 import {
@@ -26,8 +26,9 @@ export default function updateRoute(router, factory, i18n) {
   router.target('main').route('scola.test.update', (route) => {
     const string = i18n.string();
 
-    const testModel = objectModel('scola.test.object')
-      .mode(MODE_SUB);
+    const appModel = objectModel('scola.test.app');
+    const testModel = objectModel('scola.test.object');
+    // .mode(MODE_SUB);
 
     const helperModel = objectModel('scola.test.helper');
 
@@ -37,6 +38,14 @@ export default function updateRoute(router, factory, i18n) {
     updatePanel
       .header()
       .title('Item');
+
+    const reloadButton = panelButton()
+      .icon('ion-ios-refresh-empty')
+      .left();
+
+    updatePanel
+      .header()
+      .left(reloadButton, true);
 
     const updateButton = panelButton()
       .right()
@@ -70,7 +79,11 @@ export default function updateRoute(router, factory, i18n) {
     const item3 = navItem()
       .name('duration')
       .text(string.format('duration.name'))
-      .model(testModel);
+      .model(testModel, (value) => {
+        return string.format('duration.value', {
+          index: value
+        });
+      });
 
     list.append(item3, true);
 
@@ -80,16 +93,16 @@ export default function updateRoute(router, factory, i18n) {
 
     updatePanel.append(durationList, true);
 
-    const items = {};
-
     [1, 3, 5].forEach((number) => {
       const item = checkItem()
         .name('duration')
         .value(number)
-        .model(testModel);
+        .model(testModel)
+        .text(string.format('duration.value', {
+          index: number
+        }));
 
       durationList.append(item, true);
-      items[number] = item;
     });
 
     const buttonList = itemList()
@@ -137,6 +150,8 @@ export default function updateRoute(router, factory, i18n) {
         if (error) {
           list.comment(error.toString(string, null, 'field_'));
           list.comment().style('color', 'red');
+        } else {
+          testModel.commit();
         }
       });
     }
@@ -185,16 +200,6 @@ export default function updateRoute(router, factory, i18n) {
       } else {
         updateButton.disabled(true);
       }
-
-      Object.keys(items).forEach((number) => {
-        items[number].text(string.format('duration.value', {
-          index: number
-        }));
-      });
-
-      item3.secondary().text(string.format('duration.value', {
-        index: testModel.get('duration')
-      }));
     }
 
     function handleChangeTest(event) {
@@ -228,6 +233,23 @@ export default function updateRoute(router, factory, i18n) {
         });
     }
 
+    function handleReload() {
+      testModel.fetch((error) => {
+        if (error) {
+          lock(error.toString(i18n.string()));
+          return;
+        }
+
+        unlock();
+      });
+    }
+
+    function handleChangeApp(event) {
+      if (event.name === 'status' && event.value === 'online') {
+        handleReload();
+      }
+    }
+
     function handleRoute(parameters) {
       if (typeof parameters.id !== 'undefined') {
         unlock();
@@ -252,8 +274,11 @@ export default function updateRoute(router, factory, i18n) {
       helperModel.removeListener('change', handleChangeHelper);
       helperModel.destroy();
 
+      appModel.removeListener('set', handleChangeApp);
+
       updateButton.root().on('click', null);
       deleteButton.root().on('click', null);
+      reloadButton.root().on('click', null);
 
       if (pop) {
         pop.destroy();
@@ -269,9 +294,11 @@ export default function updateRoute(router, factory, i18n) {
       testModel.on('change', handleChangeTest);
 
       helperModel.on('set', handleChangeHelper);
+      appModel.on('set', handleChangeApp);
 
       updateButton.root().on('click', handleUpdate);
       deleteButton.root().on('click', handleDelete);
+      reloadButton.root().on('click', handleReload);
     }
 
     construct();

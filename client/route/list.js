@@ -5,9 +5,9 @@ import {
 } from '@scola/d3-list';
 
 import {
+  MODE_UNSUB,
   listModel,
-  objectModel,
-  MODE_UNSUB
+  objectModel
 } from '@scola/d3-model';
 
 import {
@@ -28,11 +28,28 @@ export default function testListRoute(router, factory, i18n) {
     const helperModel = objectModel('scola.test.helper');
 
     const listPanel = panel()
-      .header(true);
+      .header(true)
+      .footer(true);
+
+    listPanel
+      .footer()
+      .title()
+      .styles({
+        'font-size': '0.9em',
+        'font-weight': 'normal'
+      });
 
     listPanel
       .header()
       .title(i18n.string().format('menu'));
+
+    const reloadButton = panelButton()
+      .icon('ion-ios-refresh-empty')
+      .left();
+
+    listPanel
+      .header()
+      .left(reloadButton, true);
 
     const insertButton = panelButton()
       .icon('ion-ios-plus-empty')
@@ -162,9 +179,11 @@ export default function testListRoute(router, factory, i18n) {
           }))
         .meta((error) => {
           if (error) {
-            console.log(error);
+            listPanel.message(error.toString(i18n.string()));
             return;
           }
+
+          listPanel.message(false);
 
           route
             .parameter('filter', event.value || null)
@@ -173,6 +192,10 @@ export default function testListRoute(router, factory, i18n) {
           scroll
             .clear()
             .load(() => {
+              helperModel
+                .set('timestamp', new Date())
+                .commit();
+
               scroll
                 .count(true)
                 .span(true)
@@ -183,13 +206,45 @@ export default function testListRoute(router, factory, i18n) {
         });
     }
 
+    function handleReload() {
+      testModel.fetch((error) => {
+        if (error) {
+          listPanel.message(error.toString(i18n.string()));
+          return;
+        }
+
+        listPanel.message(false);
+
+        scroll
+          .clear()
+          .load(() => {
+            helperModel
+              .set('timestamp', new Date())
+              .commit();
+
+            scroll
+              .count(true)
+              .span(true)
+              .render();
+          });
+      });
+    }
+
     function handleChangeOffset(event) {
       route
         .parameter('offset', event.value)
         .go('replace');
     }
 
+    function handleChangeTimestamp(event) {
+      listPanel.footer().title(i18n.date().format(event.value, 'LLLL'));
+    }
+
     function handleChangeHelper(event) {
+      if (event.name === 'timestamp') {
+        handleChangeTimestamp(event);
+      }
+
       if (event.name === 'filter') {
         handleChangeFilter(event);
       }
@@ -234,11 +289,13 @@ export default function testListRoute(router, factory, i18n) {
       route.removeListener('destroy', handleDestroy);
 
       testModel.removeListener('change', handleChangeTest);
+      testModel.removeListener('open', handleReload);
       testModel.destroy();
 
       helperModel.removeListener('set', handleChangeHelper);
       helperModel.destroy();
 
+      reloadButton.root().on('click', null);
       insertButton.root().on('click', null);
     }
 
@@ -247,8 +304,10 @@ export default function testListRoute(router, factory, i18n) {
       route.on('destroy', handleDestroy);
 
       testModel.on('change', handleChangeTest);
+      testModel.on('open', handleReload);
       helperModel.on('set', handleChangeHelper);
 
+      reloadButton.root().on('click', handleReload);
       insertButton.root().on('click', handleInsert);
     }
 
