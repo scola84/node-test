@@ -35,7 +35,7 @@ export default function testListRoute(router, factory, i18n) {
       .footer()
       .title()
       .styles({
-        'font-size': '0.9em',
+        'font-size': '0.8em',
         'font-weight': 'normal'
       });
 
