@@ -12,10 +12,7 @@ import {
 } from '@scola/d3-list';
 
 import { objectModel } from '@scola/d3-model';
-
-import {
-  popOver
-} from '@scola/d3-pop';
+import { popOver } from '@scola/d3-pop';
 
 export default function insertRoute(router, factory, i18n) {
   router.target('scola.test.insert', (target) => {

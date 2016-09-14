@@ -12,10 +12,7 @@ import {
   listButton
 } from '@scola/d3-list';
 
-import {
-  MODE_SUB,
-  objectModel
-} from '@scola/d3-model';
+import { objectModel } from '@scola/d3-model';
 
 import {
   popUp,
@@ -28,8 +25,6 @@ export default function updateRoute(router, factory, i18n) {
 
     const appModel = objectModel('scola.test.app');
     const testModel = objectModel('scola.test.object');
-    // .mode(MODE_SUB);
-
     const helperModel = objectModel('scola.test.helper');
 
     const updatePanel = panel()
