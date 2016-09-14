@@ -11,6 +11,7 @@
     "@scola/d3-media": "^1.0.0",
     "@scola/d3-model": "^1.0.0",
     "@scola/d3-panel": "^1.0.0",
-    "@scola/d3-pop": "^1.0.0"
+    "@scola/d3-pop": "^1.0.0",
+    "@scola/validator": "^5.0.0"
   }
 }
