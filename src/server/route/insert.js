@@ -8,7 +8,7 @@ export default function insertRoute(router, factory) {
         if (!error) {
           response
             .status(201)
-            .header('id', model.id())
+            .header('x-put-id', model.id())
             .end(result);
         }
 

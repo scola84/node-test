@@ -289,7 +289,7 @@ export default function testListRoute(router, factory, i18n) {
       route.removeListener('destroy', handleDestroy);
 
       testModel.removeListener('change', handleChangeTest);
-      testModel.removeListener('open', handleReload);
+      // testModel.removeListener('open', handleReload);
       testModel.destroy();
 
       helperModel.removeListener('set', handleChangeHelper);
@@ -304,7 +304,7 @@ export default function testListRoute(router, factory, i18n) {
       route.on('destroy', handleDestroy);
 
       testModel.on('change', handleChangeTest);
-      testModel.on('open', handleReload);
+      // testModel.on('open', handleReload);
       helperModel.on('set', handleChangeHelper);
 
       reloadButton.root().on('click', handleReload);

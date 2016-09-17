@@ -61,19 +61,26 @@ export default function insertRoute(router, factory, i18n) {
 
     const item1 = inputItem()
       .name('text')
+      .text(string.format('text'), '3em')
       .model(insertModel);
 
     list.append(item1, true);
 
     const item2 = switchItem()
       .name('switch')
+      .text(string.format('switch'))
       .model(insertModel);
 
     list.append(item2, true);
 
     const item3 = navItem()
       .name('duration')
-      .model(insertModel);
+      .text(string.format('duration.name'))
+      .model(insertModel, (value) => {
+        return string.format('duration.value', {
+          index: value
+        });
+      });
 
     list.append(item3, true);
 
@@ -83,16 +90,16 @@ export default function insertRoute(router, factory, i18n) {
 
     insertPanel.append(durationList, true);
 
-    const items = {};
-
     [1, 3, 5].forEach((number) => {
       const item = checkItem()
         .name('duration')
         .value(number)
-        .model(insertModel);
+        .model(insertModel)
+        .text(string.format('duration.value', {
+          index: number
+        }));
 
       durationList.append(item, true);
-      items[number] = item;
     });
 
     function handleCancel() {
@@ -104,6 +111,8 @@ export default function insertRoute(router, factory, i18n) {
         return;
       }
 
+      insertButton.disabled(true);
+
       insertModel
         .model(factory
           .model('i')
@@ -114,48 +123,48 @@ export default function insertRoute(router, factory, i18n) {
             return;
           }
 
+          insertButton.disabled(false);
           list.comment(error.toString(string, null, 'field_'));
           list.comment().style('color', 'red');
         });
     }
 
-    function handleChange() {
+    function handleSet() {
       if (insertModel.diff().length > 0) {
         insertButton.disabled(false);
       } else {
         insertButton.disabled(true);
       }
+    }
 
-      Object.keys(items).forEach((number) => {
-        items[number].text(string.format('duration.value', {
-          index: number
-        }));
-      });
-
-      item1.text(string.format('text'), '3em');
-      item2.text(string.format('switch'));
-      item3.text(string.format('duration.name'));
-
-      item3.secondary().text(string.format('duration.value', {
-        index: insertModel.get('duration')
-      }));
+    function handleCommit() {
+      insertButton.disabled(true);
     }
 
     function handleDestroy() {
       cancelButton.root().on('click', null);
       insertButton.root().on('click', null);
 
-      insertModel.removeListener('change', handleChange);
+      insertModel.removeListener('set', handleSet);
+      insertModel.removeListener('commit', handleCommit);
       insertModel.destroy();
     }
 
-    cancelButton.root().on('click', handleCancel);
-    insertButton.root().on('click', handleInsert);
+    function construct() {
+      cancelButton.root().on('click', handleCancel);
+      insertButton.root().on('click', handleInsert);
 
-    insertModel.on('change', handleChange);
-    route.on('destroy', handleDestroy);
+      insertModel.on('set', handleSet);
+      insertModel.on('commit', handleCommit);
 
-    insertModel.emit('change');
+      route.on('destroy', handleDestroy);
+
+      insertModel
+        .set('text', '')
+        .commit();
+    }
+
+    construct();
 
     return insertPanel;
   });
