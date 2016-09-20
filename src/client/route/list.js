@@ -206,6 +206,23 @@ export default function testListRoute(router, factory, i18n) {
         });
     }
 
+    function render() {
+      listPanel.message(false);
+
+      scroll
+        .clear()
+        .load(() => {
+          helperModel
+            .set('timestamp', new Date())
+            .commit();
+
+          scroll
+            .count(true)
+            .span(true)
+            .render();
+        });
+    }
+
     function handleReload() {
       testModel.fetch((error) => {
         if (error) {
@@ -213,20 +230,7 @@ export default function testListRoute(router, factory, i18n) {
           return;
         }
 
-        listPanel.message(false);
-
-        scroll
-          .clear()
-          .load(() => {
-            helperModel
-              .set('timestamp', new Date())
-              .commit();
-
-            scroll
-              .count(true)
-              .span(true)
-              .render();
-          });
+        render();
       });
     }
 
@@ -276,12 +280,10 @@ export default function testListRoute(router, factory, i18n) {
     }
 
     function handleRoute(parameters) {
-      setTimeout(() => {
-        helperModel
-          .set('filter', parameters.filter || '')
-          .set('offset', Number(parameters.offset) || 0)
-          .commit();
-      });
+      helperModel
+        .set('filter', parameters.filter || '')
+        .set('offset', Number(parameters.offset) || 0)
+        .commit();
     }
 
     function handleDestroy() {
@@ -289,7 +291,7 @@ export default function testListRoute(router, factory, i18n) {
       route.removeListener('destroy', handleDestroy);
 
       testModel.removeListener('change', handleChangeTest);
-      // testModel.removeListener('open', handleReload);
+      testModel.removeListener('open', render);
       testModel.destroy();
 
       helperModel.removeListener('set', handleChangeHelper);
@@ -304,7 +306,7 @@ export default function testListRoute(router, factory, i18n) {
       route.on('destroy', handleDestroy);
 
       testModel.on('change', handleChangeTest);
-      // testModel.on('open', handleReload);
+      testModel.on('open', render);
       helperModel.on('set', handleChangeHelper);
 
       reloadButton.root().on('click', handleReload);
